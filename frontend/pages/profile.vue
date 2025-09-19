@@ -1,4 +1,5 @@
 <script setup>
+definePageMeta({ middleware: 'auth-client' })
 const api = useApi();
 const profile = ref(null);
 const baseline = ref(null);

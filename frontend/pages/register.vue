@@ -1,16 +1,15 @@
 <script setup>
-const api = useApi();
-const auth = useAuth();
-const email = ref("");
-const password = ref("");
-async function submit() {
-  const res = await api.post("/auth/register", {
-    email: email.value,
-    password: password.value,
-  });
-  auth.setToken(res.access_token);
-  await navigateTo("/dashboard");
+const api = useApi()
+const auth = useAuth()
+const email = ref('')
+const password = ref('')
+
+async function submit () {
+  const res = await api.post('/auth/register', { email: email.value, password: password.value })
+  auth.setTokens(res.access_token, res.refresh_token)
+  await navigateTo('/dashboard')
 }
+
 </script>
 <template>
   <div class="p-8 max-w-md mx-auto">
