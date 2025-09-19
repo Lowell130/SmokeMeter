@@ -1,3 +1,4 @@
+// composables/useLogs.js
 export function useLogs () {
 const api = useApi()
 const state = useState('logs', () => ({ today: 0, series: [], hourly: [] }))

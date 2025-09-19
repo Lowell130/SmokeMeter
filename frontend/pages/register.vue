@@ -1,3 +1,4 @@
+<!-- page/register.vue -->
 <script setup>
 const api = useApi()
 const auth = useAuth()

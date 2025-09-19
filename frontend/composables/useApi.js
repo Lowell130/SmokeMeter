@@ -1,3 +1,4 @@
+// composables/useApi.js
 export function useApi () {
   const { public: { apiBase } } = useRuntimeConfig()
   const base = apiBase || 'http://127.0.0.1:8000'

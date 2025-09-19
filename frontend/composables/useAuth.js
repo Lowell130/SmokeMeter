@@ -1,3 +1,4 @@
+// composables/useAuth.js
 export function useAuth () {
   const api = useApi()
   const token = useState('token', () => null)
