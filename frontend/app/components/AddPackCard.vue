@@ -1,28 +1,79 @@
 <template>
   <div class="p-4 bg-white rounded-2xl shadow space-y-3">
     <h3 class="font-semibold">Aggiungi pacchetto</h3>
+
     <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-      <input v-model="brand" placeholder="Marca" class="border p-2 rounded" />
+      <input
+        v-model.trim="brand"
+        @keyup.enter="tryAdd"
+        placeholder="Marca"
+        class="border p-2 rounded"
+      />
       <select v-model.number="size" class="border p-2 rounded">
         <option :value="20">20</option>
         <option :value="10">10</option>
       </select>
-      <input v-model.number="price" type="number" step="0.01" placeholder="Prezzo" class="border p-2 rounded" />
+      <input
+        v-model.number="price"
+        @keyup.enter="tryAdd"
+        type="number"
+        min="0"
+        step="0.01"
+        placeholder="Prezzo"
+        class="border p-2 rounded"
+      />
     </div>
-    <button @click="add" class="bg-gray-900 text-white px-3 py-2 rounded">Salva</button>
+
+    <div class="text-sm text-red-600" v-if="error">{{ error }}</div>
+
+    <button
+      :disabled="!isValid || loading"
+      @click="tryAdd"
+      class="bg-gray-900 text-white px-3 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <span v-if="!loading">Salva</span>
+      <span v-else>Salvataggio…</span>
+    </button>
   </div>
 </template>
+
 <script setup>
 const emit = defineEmits(['added'])
+const { post } = useApi()
+
 const brand = ref('')
 const size = ref(20)
 const price = ref()
-const { post } = useApi()
-const add = async () => {
-  const body = { brand: brand.value, size: size.value, price: price.value || 0 }
-  await post('/packs', body)
+const loading = ref(false)
+const error = ref('')
+
+const isValid = computed(() => {
+  const okBrand = brand.value && brand.value.length >= 2
+  const okSize = [10, 20].includes(Number(size.value))
+  const okPrice = price.value !== undefined && !Number.isNaN(Number(price.value)) && Number(price.value) >= 0
+  return okBrand && okSize && okPrice
+})
+
+const reset = () => {
   brand.value = ''
+  size.value = 20
   price.value = undefined
-  emit('added')
+  error.value = ''
+}
+
+const tryAdd = async () => {
+  if (!isValid.value || loading.value) return
+  loading.value = true
+  error.value = ''
+  try {
+    const body = { brand: brand.value, size: Number(size.value), price: Number(price.value) || 0 }
+    await post('/packs', body)
+    reset()
+    emit('added')
+  } catch (e) {
+    error.value = e?.data?.detail || 'Errore durante il salvataggio'
+  } finally {
+    loading.value = false
+  }
 }
 </script>

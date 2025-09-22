@@ -1,3 +1,5 @@
+
+<!-- components/StatsCards.vue -->
 <template>
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <div class="p-4 bg-white rounded-2xl shadow">

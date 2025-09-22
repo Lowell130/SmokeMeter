@@ -3,6 +3,7 @@ from ..core.deps import get_current_user_id
 from ..db.mongo import get_db
 from ..schemas.pack import PackCreate, PackUpdate
 from ..utils import now_ts, oid, to_primitive
+from datetime import timezone
 
 router = APIRouter(prefix="/packs", tags=["packs"])
 
@@ -12,13 +13,23 @@ async def list_packs(user_id: str = Depends(get_current_user_id)):
     cur = db.packs.find({"user_id": user_id}).sort("created_at", -1)
     out = []
     async for x in cur:
+        # Fallback: se manca created_at, stimiamo dal ObjectId.generation_time
+        created = x.get("created_at")
+        if not created:
+            try:
+                created = int(x["_id"].generation_time.replace(tzinfo=timezone.utc).timestamp())
+                # (opzionale) backfill nel DB per avere il campo d'ora in poi
+                await db.packs.update_one({"_id": x["_id"]}, {"$set": {"created_at": created}})
+            except Exception:
+                created = 0
+
         out.append({
             "_id": str(x["_id"]),
             "user_id": x.get("user_id"),
             "brand": x.get("brand"),
             "size": int(x.get("size", 0)),
             "price": float(x.get("price", 0)),
-            "created_at": int(x.get("created_at", 0)),
+            "created_at": int(created),
         })
     return out
 
