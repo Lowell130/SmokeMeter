@@ -4,7 +4,9 @@ from ..core.config import settings
 client: AsyncIOMotorClient | None = None
 
 def get_db():
-    return client["smoketracker"]
+    if client is None:
+        raise RuntimeError("Mongo client non inizializzato. Hai chiamato connect() all'avvio?")
+    return client[settings.MONGO_DB]     # <— usa il nome DB dal .env
 
 async def connect():
     global client
@@ -12,4 +14,6 @@ async def connect():
 
 async def disconnect():
     global client
-    client.close()
+    if client is not None:
+        client.close()
+        client = None
