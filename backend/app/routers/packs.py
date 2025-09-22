@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from ..core.deps import get_current_user_id
 from ..db.mongo import get_db
 from ..schemas.pack import PackCreate, PackUpdate
@@ -167,3 +167,51 @@ async def packs_consumption_summary(user_id: str = Depends(get_current_user_id))
             "avg_price": float(x["avg_price"]) if x.get("avg_price") is not None else None
         })
     return out
+
+
+@router.delete("/{pack_id}")
+async def delete_pack(
+    pack_id: str,
+    user_id: str = Depends(get_current_user_id),
+    mode: str = Query("cascade", regex="^(cascade|block|loose)$")
+):
+    """
+    Elimina un pacchetto.
+    - mode=cascade (default): elimina anche le smokes collegate.
+    - mode=block: se esistono smokes collegate -> 409 Conflict.
+    - mode=loose: scollega le smokes (rimuove pack_id, imposta source='loose').
+    """
+
+    db = get_db()
+    pack = await db.packs.find_one({"_id": oid(pack_id), "user_id": user_id})
+    if not pack:
+        raise HTTPException(status_code=404, detail="Pacchetto non trovato")
+
+    # quante smokes collegate a questo pacchetto per l'utente
+    linked_filter = {"user_id": user_id, "pack_id": pack_id}
+    linked_count = await db.smokes.count_documents(linked_filter)
+
+    if mode == "block" and linked_count > 0:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Impossibile eliminare: ci sono {linked_count} sigarette collegate al pacchetto."
+        )
+
+    if mode == "cascade":
+        # elimina smokes collegate
+        del_res = await db.smokes.delete_many(linked_filter)
+        deleted_smokes = del_res.deleted_count
+    elif mode == "loose":
+        # scollega smokes -> diventano “loose”
+        upd_res = await db.smokes.update_many(
+            linked_filter,
+            {"$unset": {"pack_id": ""}, "$set": {"source": "loose"}}
+        )
+        deleted_smokes = 0  # nessuna eliminata
+    else:
+        deleted_smokes = 0  # block o nessuna azione ulteriore
+
+    # elimina il pack
+    await db.packs.delete_one({"_id": oid(pack_id), "user_id": user_id})
+
+    return {"ok": True, "mode": mode, "linked_smokes_before": linked_count, "deleted_smokes": deleted_smokes}

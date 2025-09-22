@@ -7,7 +7,11 @@
       <AddSmokeCard :packs="packs" @added="refresh" />
     </div>
 
-  <PacksTable :packs="packs" @deleted="refresh" />
+  <PacksTable
+  :packs="packs"
+  @deleted="refresh"
+  @updated="refresh"
+/>
 
 
     <!-- Due card grafiche con stesso stile -->
