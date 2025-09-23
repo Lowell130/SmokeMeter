@@ -7,9 +7,9 @@
         v-model.trim="brand"
         @keyup.enter="tryAdd"
         placeholder="Marca"
-        class="border p-2 rounded"
+        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
       />
-      <select v-model.number="size" class="border p-2 rounded">
+      <select v-model.number="size" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
         <option :value="20">20</option>
         <option :value="10">10</option>
       </select>
@@ -20,7 +20,7 @@
         min="0"
         step="0.01"
         placeholder="Prezzo"
-        class="border p-2 rounded"
+        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
       />
     </div>
 
@@ -29,7 +29,7 @@
     <button
       :disabled="!isValid || loading"
       @click="tryAdd"
-      class="bg-gray-900 text-white px-3 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+      class="text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700"
     >
       <span v-if="!loading">Salva</span>
       <span v-else>Salvataggio…</span>

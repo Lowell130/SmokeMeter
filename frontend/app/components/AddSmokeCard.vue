@@ -20,7 +20,7 @@
     <template v-if="!loose && packs?.length">
       <!-- scelta pacchetto + duplica -->
       <div class="flex gap-2 items-center">
-        <select v-model="packId" class="border p-2 rounded w-full">
+        <select v-model="packId" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
           <option value="">-- seleziona pacchetto --</option>
           <option v-for="p in packsSorted" :key="p._id" :value="p._id">
             {{ p.brand }} ({{ p.size }}) — {{ formatDate(p.created_at) }} — {{ remainingFor(p._id) }} rimaste
@@ -29,7 +29,7 @@
 
         <!-- Pulsante duplica esistente (opzionale) -->
         <button
-          class="shrink-0 px-3 py-2 rounded border text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"
           :disabled="!packId || dupLoading"
           @click="duplicateSelected"
           title="Duplica pacchetto selezionato"
@@ -45,13 +45,13 @@
       <!-- input per smoke senza pacchetto -->
       <input
         v-model.trim="brandLoose"
-        class="border p-2 rounded w-full"
+        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
         placeholder="Marca (opzionale)"
       />
     </template>
 
     <!-- scelta tipo -->
-    <select v-model="type" class="border p-2 rounded w-full">
+    <select v-model="type" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
       <option value="smoked">Fumata</option>
       <option value="wasted">Rott(a)/Buttata</option>
       <option value="gifted">Offerta a qualcuno</option>
@@ -67,7 +67,7 @@
     <button
       :disabled="!canSubmit || loading"
       @click="add"
-      class="bg-gray-900 text-white px-3 py-2 rounded w-full disabled:opacity-50 disabled:cursor-not-allowed"
+      class="text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700"
     >
       <span v-if="!loading">Aggiungi</span>
       <span v-else>Aggiungo…</span>

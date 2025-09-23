@@ -1,20 +1,20 @@
 <template>
   <div class="max-w-full w-full bg-white rounded-lg shadow-sm dark:bg-gray-800 p-4 md:p-6">
     <div class="flex justify-between">
-      <div>
+      <!-- <div>
         <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
           <slot name="headline">32.4k</slot>
         </h5>
         <p class="text-base font-normal text-gray-500 dark:text-gray-400">
           <slot name="subtitle">Users this week</slot>
         </p>
-      </div>
-      <div class="flex items-center px-2.5 py-0.5 text-base font-semibold text-green-500 dark:text-green-500 text-center">
+      </div> -->
+      <!-- <div class="flex items-center px-2.5 py-0.5 text-base font-semibold text-green-500 dark:text-green-500 text-center">
         <slot name="delta">12%</slot>
         <svg class="w-3 h-3 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 14">
           <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13V1m0 0L1 5m4-4 4 4"/>
         </svg>
-      </div>
+      </div> -->
     </div>
 
     <div ref="el" :id="chartId" class="w-full"></div>
@@ -34,11 +34,12 @@
     </div>
   </div>
 </template>
-
 <script setup>
 const props = defineProps(['series', 'categories'])
 const el = ref(null)
 let chart
+let ApexCharts
+let ro // ResizeObserver
 
 // id univoco per evitare collisioni se il componente è multiplo
 const chartId = `area-chart-${Math.random().toString(36).slice(2)}`
@@ -53,39 +54,57 @@ const buildOptions = () => ({
     toolbar: { show: false }
   },
   tooltip: { enabled: true, x: { show: false } },
-  fill: { type: 'gradient', gradient: { opacityFrom: 0.55, opacityTo: 0, shade: '#1C64F2', gradientToColors: ['#1C64F2'] } },
+  fill: {
+    type: 'gradient',
+    gradient: { opacityFrom: 0.55, opacityTo: 0, shade: '#1C64F2', gradientToColors: ['#1C64F2'] }
+  },
   dataLabels: { enabled: false },
   stroke: { width: 6 },
   grid: { show: false, strokeDashArray: 4, padding: { left: 2, right: 2, top: 0 } },
   series: props.series || [],
-  xaxis: { categories: props.categories || [], labels: { show: false }, axisBorder: { show: false }, axisTicks: { show: false } },
+  xaxis: {
+    categories: props.categories || [],
+    labels: { show: false },
+    axisBorder: { show: false },
+    axisTicks: { show: false }
+  },
   yaxis: { show: false }
 })
-
-let ApexCharts
-const onResize = () => { if (chart) chart.resize() }
 
 onMounted(async () => {
   ApexCharts = (await import('apexcharts')).default
   if (el.value) {
     chart = new ApexCharts(el.value, buildOptions())
     await chart.render()
-    window.addEventListener('resize', onResize)
+
+    // ResizeObserver → forza un leggero update quando cambia lo spazio disponibile
+    ro = new ResizeObserver(() => {
+      if (chart) chart.updateOptions({}, false, true)
+    })
+    ro.observe(el.value)
   }
 })
 
-watch(() => [props.series, props.categories], async () => {
-  if (chart) {
+watch(
+  () => [props.series, props.categories],
+  async () => {
+    if (!chart) return
     await chart.updateOptions(
-      { series: props.series || [], xaxis: { categories: props.categories || [] } },
+      {
+        series: props.series || [],
+        xaxis: { categories: props.categories || [] }
+      },
       false,
       true
     )
-  }
-}, { deep: true })
+  },
+  { deep: true }
+)
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', onResize)
+  if (ro && el.value) ro.unobserve(el.value)
+  ro = undefined
   if (chart) chart.destroy()
+  chart = undefined
 })
 </script>

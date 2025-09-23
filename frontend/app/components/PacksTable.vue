@@ -2,25 +2,31 @@
   <div class="p-4 bg-white rounded-2xl shadow">
     <h3 class="font-semibold mb-3">Pacchetti inseriti</h3>
 
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-sm">
-        <thead class="text-left text-gray-600">
+    <div class="relative overflow-x-auto">
+      <table class="w-full text-sm text-left rtl:text-right text-gray-500">
+        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
           <tr>
-            <th class="py-2 pr-4">Data</th>
-            <th class="py-2 pr-4">Marca</th>
-            <th class="py-2 pr-4">Formato</th>
-            <th class="py-2 pr-4">Prezzo</th>
-            <th class="py-2 pr-2 text-right">Azioni</th>
+            <th scope="col" class="px-6 py-3">Data</th>
+            <th scope="col" class="px-6 py-3">Marca</th>
+            <th scope="col" class="px-6 py-3">Formato</th>
+            <th scope="col" class="px-6 py-3">Prezzo</th>
+            <th scope="col" class="px-6 py-3 text-right">Azioni</th>
           </tr>
         </thead>
 
         <tbody>
-          <tr v-for="p in localPacks" :key="p._id" class="border-t">
+          <tr
+            v-for="p in localPacks"
+            :key="p._id"
+            class="bg-white border-b border-gray-200"
+          >
             <!-- DATA -->
-            <td class="py-2 pr-4 font-mono">{{ formatDate(p.created_at) }}</td>
+            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap font-mono">
+              {{ formatDate(p.created_at) }}
+            </th>
 
             <!-- MARCA -->
-            <td class="py-2 pr-4">
+            <td class="px-6 py-4">
               <template v-if="editingId === p._id">
                 <input v-model.trim="draft.brand" class="border p-1 rounded w-full" />
               </template>
@@ -30,7 +36,7 @@
             </td>
 
             <!-- FORMATO -->
-            <td class="py-2 pr-4">
+            <td class="px-6 py-4">
               <template v-if="editingId === p._id">
                 <select v-model.number="draft.size" class="border p-1 rounded">
                   <option :value="20">20</option>
@@ -43,7 +49,7 @@
             </td>
 
             <!-- PREZZO -->
-            <td class="py-2 pr-4">
+            <td class="px-6 py-4">
               <template v-if="editingId === p._id">
                 <input v-model.number="draft.price" type="number" step="0.01" min="0" class="border p-1 rounded w-28" />
               </template>
@@ -53,7 +59,7 @@
             </td>
 
             <!-- AZIONI -->
-            <td class="py-2 pr-2">
+            <td class="px-6 py-4">
               <div class="flex items-center justify-end gap-2">
                 <!-- EDIT MODE -->
                 <template v-if="editingId === p._id">
@@ -97,6 +103,7 @@
                     title="Elimina"
                     aria-label="Elimina"
                   >
+                    <!-- trash -->
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0V6a2 2 0 012-2h2a2 2 0 012 2v1" />
@@ -111,8 +118,8 @@
             </td>
           </tr>
 
-          <tr v-if="!localPacks?.length">
-            <td class="py-4 text-gray-500" colspan="5">Nessun pacchetto ancora inserito.</td>
+          <tr v-if="!localPacks?.length" class="bg-white">
+            <td class="px-6 py-4 text-gray-500" colspan="5">Nessun pacchetto ancora inserito.</td>
           </tr>
         </tbody>
       </table>
@@ -126,7 +133,7 @@ const props = defineProps({ packs: { type: Array, default: () => [] } })
 
 const { del, patch } = useApi()
 
-// lavoriamo su una copia locale per feedback immediato
+// copia locale per feedback immediato
 const localPacks = ref([])
 watch(() => props.packs, (v) => { localPacks.value = Array.isArray(v) ? v.map(x => ({ ...x })) : [] }, { immediate: true })
 
@@ -161,6 +168,8 @@ const cancelEdit = () => {
 
 const saveEdit = async (p) => {
   if (!editingId.value) return
+
+  // validazioni minime
   if (!draft.brand || draft.brand.length < 2) {
     errorById.value = { ...errorById.value, [p._id]: 'Marca non valida' }
     return
@@ -174,28 +183,28 @@ const saveEdit = async (p) => {
     return
   }
 
-  saving.value = true
-  try {
-    const payload = {
-      brand: draft.brand,
-      size: Number(draft.size),
-      price: Number(draft.price)
-    }
-    await patch(`/packs/${p._id}`, payload)
+  // invia solo campi modificati
+  const payload = {}
+  if (draft.brand !== p.brand) payload.brand = draft.brand
+  if (Number(draft.size) !== Number(p.size)) payload.size = Number(draft.size)
+  if (Number(draft.price) !== Number(p.price)) payload.price = Number(draft.price)
 
-    // aggiorna riga localmente
+  if (Object.keys(payload).length === 0) { editingId.value = null; return }
+
+  saving.value = true
+  errorById.value = { ...errorById.value, [p._id]: '' }
+
+  try {
+    const updated = await patch(`/packs/${p._id}`, payload)
     const idx = localPacks.value.findIndex(x => x._id === p._id)
     if (idx !== -1) {
-      localPacks.value[idx] = { ...localPacks.value[idx], ...payload }
+      localPacks.value[idx] = { ...localPacks.value[idx], ...payload, ...updated }
     }
-
     editingId.value = null
-    emit('updated', p._id) // facoltativo: la dashboard può fare refresh()
+    emit('updated', p._id)
   } catch (e) {
-    errorById.value = {
-      ...errorById.value,
-      [p._id]: e?.data?.detail || 'Errore durante il salvataggio'
-    }
+    const msg = e?.data?.detail || e?.message || 'Errore durante il salvataggio'
+    errorById.value = { ...errorById.value, [p._id]: `${msg}${e?.status ? ` (HTTP ${e.status})` : ''}` }
   } finally {
     saving.value = false
   }
@@ -204,18 +213,13 @@ const saveEdit = async (p) => {
 const onDelete = async (p) => {
   errorById.value = { ...errorById.value, [p._id]: '' }
   if (!confirm(`Eliminare il pacchetto ${p.brand} (${p.size}) da € ${Number(p.price).toFixed(2)}?`)) return
-
   deletingId.value = p._id
   try {
     await del(`/packs/${p._id}`)
     emit('deleted', p._id)
-    // rimuovi anche localmente per feedback immediato
     localPacks.value = localPacks.value.filter(x => x._id !== p._id)
   } catch (e) {
-    errorById.value = {
-      ...errorById.value,
-      [p._id]: e?.data?.detail || 'Errore durante l’eliminazione'
-    }
+    errorById.value = { ...errorById.value, [p._id]: e?.data?.detail || 'Errore durante l’eliminazione' }
   } finally {
     deletingId.value = null
   }
