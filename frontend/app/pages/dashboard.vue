@@ -10,29 +10,40 @@
       
     </div>
 
-      <div class="space-y-6">
-    <!-- …tuo contenuto… -->
-    <!-- pages/dashboard.vue -->
-<InsightsSummary :days="30" :hourly-days="7" :refresh-key="refreshTick" />
+        <!-- RIGA METRICHE -->
+    <div class="grid grid-cols-1 gap-4">
+      <MetricsStrip :data="summary" />
+    </div>
 
-    <!-- …tuo contenuto… -->
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <BrandBreakdown :data="brandTop" :days="90" />
+      <!-- QUI: passa i dati veri e forza re-render quando fai refresh -->
+      <InsightsSummary :days="30" :hourly-days="7" :refresh-key="refreshTick" />
+    </div>
+
+      <!-- <div class="space-y-6">
+  …tuo contenuto… -->
+    <!-- pages/dashboard.vue -->
+    <!-- <InsightsSummary :days="30" :hourly-days="7" :refresh-key="refreshTick" />
+
+   …tuo contenuto…
+  </div>  -->
+  <div class="space-y-6">
+     <PacingCard :key="refreshTick" :data="pacing" />
   </div>
 
     <!-- <PacksTable :packs="packs" @deleted="refresh" @updated="refresh" />
 
     <SmokesTable :limit="20" :refresh-key="refreshTick" @deleted="refresh" />  -->
 
-    <!-- RIGA METRICHE -->
-    <div class="grid grid-cols-1 gap-4">
-      <MetricsStrip :data="summary" />
-    </div>
 
     <!-- RIGA BRAND / PACING -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <BrandBreakdown :data="brandTop" :days="90" />
-      <!-- QUI: passa i dati veri e forza re-render quando fai refresh -->
+      QUI: passa i dati veri e forza re-render quando fai refresh 
       <PacingCard :key="refreshTick" :data="pacing" />
-    </div>
+    </div> -->
 
     <!-- HEATMAP -->
     <div class="grid grid-cols-1 gap-4">
