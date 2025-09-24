@@ -1,3 +1,4 @@
+<!-- components/AddPackCard.vue -->
 <template>
   <div class="p-4 bg-white rounded-2xl shadow space-y-3">
     <h3 class="font-semibold">Aggiungi pacchetto</h3>

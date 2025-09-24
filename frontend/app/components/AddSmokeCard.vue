@@ -19,7 +19,6 @@
     </label>
 
     <template v-if="!loose && packs?.length">
-      <!-- scelta pacchetto + duplica -->
       <div class="flex gap-2 items-center">
         <select
           v-model="packId"
@@ -41,7 +40,6 @@
           </option>
         </select>
 
-        <!-- Pulsante duplica (opzionale) -->
         <button
           class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100
                  font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-gray-800 dark:text-white dark:border-gray-600
@@ -58,7 +56,6 @@
     </template>
 
     <template v-else>
-      <!-- input per smoke senza pacchetto -->
       <input
         v-model.trim="brandLoose"
         class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
@@ -69,7 +66,6 @@
       />
     </template>
 
-    <!-- scelta tipo -->
     <select
       v-model="type"
       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
@@ -88,7 +84,6 @@
 
     <div class="text-sm text-red-600" v-if="error">{{ error }}</div>
 
-    <!-- bottone -->
     <button
       :disabled="!canSubmit || loading"
       @click="add"
@@ -103,7 +98,11 @@
 </template>
 
 <script setup>
-const props = defineProps(['packs'])
+const props = defineProps({
+  packs: { type: Array, default: () => [] },
+  // 👉 opzionale ma consigliato: quando la dashboard fa refreshTick++, qui rifacciamo /packs/consumption
+  refreshKey: { type: Number, default: 0 },
+})
 const emit = defineEmits(['added'])
 const { post, get } = useApi()
 
@@ -117,6 +116,13 @@ const error = ref('')
 
 const loadingConsumption = ref(false)
 const consumptionMap = ref({}) // { [packId]: { remaining, smokes_count, ... } }
+
+// mappa rapida packId -> pack (serve per fallback size)
+const packById = computed(() => {
+  const map = {}
+  for (const p of props.packs || []) map[p._id] = p
+  return map
+})
 
 const formatDate = (ts) => {
   if (!ts) return '—'
@@ -132,7 +138,14 @@ const packsSorted = computed(() =>
     : []
 )
 
-const remainingOf = (id) => Number(consumptionMap.value?.[id]?.remaining ?? 0)
+// ✅ Fallback: se non abbiamo ancora i consumi di quel pack, usa il formato (size) come remaining provvisorio
+const remainingOf = (id) => {
+  const cm = consumptionMap.value?.[id]
+  if (cm && typeof cm.remaining === 'number') return Number(cm.remaining)
+  const p = packById.value[id]
+  return p ? Number(p.size || 0) : 0
+}
+
 const isPackFinished = (id) => remainingOf(id) <= 0
 
 const optionLabel = (p) => {
@@ -141,15 +154,9 @@ const optionLabel = (p) => {
   return `${p.brand} (${p.size}) — ${formatDate(p.created_at)} — ${status}`
 }
 
-const remainingFor = (id) => {
-  const info = consumptionMap.value[id]
-  return typeof info?.remaining === 'number' ? info.remaining : '?'
-}
-
-// carica rimanenti
-onMounted(async () => {
+const fetchConsumption = async () => {
+  loadingConsumption.value = true
   try {
-    loadingConsumption.value = true
     const list = await get('/packs/consumption')
     const map = {}
     list.forEach(item => {
@@ -160,22 +167,39 @@ onMounted(async () => {
       }
     })
     consumptionMap.value = map
-
-    // se il pack selezionato nel frattempo è finito, deselezionalo
-    if (packId.value && isPackFinished(packId.value)) {
-      packId.value = ''
-    }
+    // se il pack selezionato è finito dopo l’update, deseleziona
+    if (packId.value && isPackFinished(packId.value)) packId.value = ''
   } catch (e) {
     console.warn('Impossibile caricare /packs/consumption', e?.status || e)
   } finally {
     loadingConsumption.value = false
   }
-})
+}
+
+// primo load
+onMounted(fetchConsumption)
+
+// 🔁 quando la dashboard fa refreshTick++, rifacciamo i consumi (opzionale ma consigliato)
+watch(() => props.refreshKey, () => { fetchConsumption() })
+
+// 🔁 quando cambiano i packs (e magari arriva un pack nuovo), scegli il più recente non finito se non c’è selezione
+watch(
+  () => props.packs,
+  (val) => {
+    if (!Array.isArray(val) || val.length === 0) return
+    if (!packId.value) {
+      const firstUsable = [...val]
+        .sort((a,b) => (b.created_at||0)-(a.created_at||0))
+        .find(p => remainingOf(p._id) > 0)
+      if (firstUsable) packId.value = firstUsable._id
+    }
+  },
+  { immediate: true, deep: true }
+)
 
 const canSubmit = computed(() => {
   const okType = ['smoked', 'wasted', 'gifted'].includes(type.value)
   if (loose.value) return okType
-  // con pacchetto: serve un pack valido e non finito
   return okType && !!packId.value && remainingOf(packId.value) > 0
 })
 
@@ -190,32 +214,14 @@ const add = async () => {
       await post('/smokes', body)
       brandLoose.value = ''
     } else {
-      // ulteriore guardia (nel caso il DOM non avesse disabilitato l’opzione)
       if (isPackFinished(packId.value)) {
         error.value = 'Pacchetto finito: seleziona un altro pacchetto.'
         return
       }
       await post('/smokes', { pack_id: packId.value, type: type.value })
-
       // refresh rimanenti
-      try {
-        const list = await get('/packs/consumption')
-        const map = {}
-        list.forEach(item => {
-          map[item._id] = {
-            remaining: Number(item.remaining ?? 0),
-            smokes_count: Number(item.smokes_count ?? 0),
-            consumed_count: Number(item.consumed_count ?? item.smokes_count ?? 0),
-          }
-        })
-        consumptionMap.value = map
-        if (packId.value && isPackFinished(packId.value)) {
-          packId.value = ''
-        }
-      } catch (_) {}
+      await fetchConsumption()
     }
-
-    // reset tipo
     type.value = 'smoked'
     emit('added')
   } catch (e) {

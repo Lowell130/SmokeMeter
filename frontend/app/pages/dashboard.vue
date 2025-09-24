@@ -4,14 +4,17 @@
     <StatsCards :stats="stats" :packs="packs" />
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <AddSmokeCard :packs="packs" @added="refresh" />
-      <AddPackCard @added="refresh" />
+   <AddPackCard @added="refresh" />
+<AddSmokeCard :packs="packs" :refresh-key="refreshTick" @added="refresh" />
+
       
     </div>
 
       <div class="space-y-6">
     <!-- …tuo contenuto… -->
-    <InsightsSummary :days="30" :hourly-days="7" />
+    <!-- pages/dashboard.vue -->
+<InsightsSummary :days="30" :hourly-days="7" :refresh-key="refreshTick" />
+
     <!-- …tuo contenuto… -->
   </div>
 
