@@ -8,7 +8,7 @@ app = FastAPI(title="Smoke Tracker API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.CORS_ORIGINS],
+    allow_origins=[settings.CORS_ORIGINS, "https://smokio.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
