@@ -31,7 +31,7 @@ onMounted(load)
   <div>
     <div class="flex items-center justify-between mb-4">
       <h3 class="font-semibold">Trend orario (ultimi {{ days }} giorni)</h3>
-      <select v-model.number="days" @change="load" class="border p-1 rounded text-sm">
+      <select v-model.number="days" @change="load" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5 pr-8 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
         <option :value="7">7 giorni</option>
         <option :value="14">14 giorni</option>
         <option :value="30">30 giorni</option>

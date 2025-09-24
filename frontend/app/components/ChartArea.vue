@@ -1,20 +1,8 @@
+<!-- components/ChartArea.vue -->
 <template>
   <div class="max-w-full w-full bg-white rounded-lg shadow-sm dark:bg-gray-800 p-4 md:p-6">
     <div class="flex justify-between">
-      <!-- <div>
-        <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
-          <slot name="headline">32.4k</slot>
-        </h5>
-        <p class="text-base font-normal text-gray-500 dark:text-gray-400">
-          <slot name="subtitle">Users this week</slot>
-        </p>
-      </div> -->
-      <!-- <div class="flex items-center px-2.5 py-0.5 text-base font-semibold text-green-500 dark:text-green-500 text-center">
-        <slot name="delta">12%</slot>
-        <svg class="w-3 h-3 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 14">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13V1m0 0L1 5m4-4 4 4"/>
-        </svg>
-      </div> -->
+      <!-- (se vuoi rimettere headline/subtitle, lascia gli slot qui) -->
     </div>
 
     <div ref="el" :id="chartId" class="w-full"></div>
@@ -22,20 +10,40 @@
     <div class="grid grid-cols-1 items-center border-gray-200 border-t dark:border-gray-700 justify-between">
       <div class="flex justify-between items-center pt-5">
         <slot name="controls" />
-        <a
-          href="#"
-          class="uppercase text-sm font-semibold inline-flex items-center rounded-lg text-blue-600 hover:text-blue-700 dark:hover:text-blue-500 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2">
-          Users Report
-          <svg class="w-2.5 h-2.5 ms-1.5 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
-          </svg>
-        </a>
+        <div class="flex items-center gap-2">
+          <button
+            v-if="downloadable"
+            @click="downloadPNG"
+            class="uppercase text-sm font-semibold inline-flex items-center rounded-lg text-blue-600 hover:text-blue-700 dark:hover:text-blue-500 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2"
+          >
+            Scarica PNG
+          </button>
+          <button
+            v-if="downloadable"
+            @click="downloadCSV"
+            class="uppercase text-sm font-semibold inline-flex items-center rounded-lg text-blue-600 hover:text-blue-700 dark:hover:text-blue-500 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2"
+          >
+            Scarica CSV
+          </button>
+          <!-- se preferisci un link a una pagina report dedicata, puoi aggiungere:
+          <NuxtLink to="/reports/trend"
+            class="uppercase text-sm font-semibold inline-flex items-center rounded-lg text-blue-600 hover:text-blue-700 dark:hover:text-blue-500 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2">
+            Apri report
+          </NuxtLink>
+          -->
+        </div>
       </div>
     </div>
   </div>
 </template>
+
 <script setup>
-const props = defineProps(['series', 'categories'])
+const props = defineProps({
+  series: { type: Array, default: () => [] },       // es: [{ name: 'Sigarette', data: [1,2,3] }]
+  categories: { type: Array, default: () => [] },   // es: ['2025-09-01', ...]
+  downloadable: { type: Boolean, default: true },   // mostra/nasconde i bottoni di export
+})
+
 const el = ref(null)
 let chart
 let ApexCharts
@@ -51,12 +59,12 @@ const buildOptions = () => ({
     type: 'area',
     fontFamily: 'Inter, sans-serif',
     dropShadow: { enabled: false },
-    toolbar: { show: false }
+    toolbar: { show: false }, // abbiamo bottoni custom
   },
   tooltip: { enabled: true, x: { show: false } },
   fill: {
     type: 'gradient',
-    gradient: { opacityFrom: 0.55, opacityTo: 0, shade: '#1C64F2', gradientToColors: ['#1C64F2'] }
+    gradient: { opacityFrom: 0.55, opacityTo: 0, shade: '#1C64F2', gradientToColors: ['#1C64F2'] },
   },
   dataLabels: { enabled: false },
   stroke: { width: 6 },
@@ -66,9 +74,9 @@ const buildOptions = () => ({
     categories: props.categories || [],
     labels: { show: false },
     axisBorder: { show: false },
-    axisTicks: { show: false }
+    axisTicks: { show: false },
   },
-  yaxis: { show: false }
+  yaxis: { show: false },
 })
 
 onMounted(async () => {
@@ -92,7 +100,7 @@ watch(
     await chart.updateOptions(
       {
         series: props.series || [],
-        xaxis: { categories: props.categories || [] }
+        xaxis: { categories: props.categories || [] },
       },
       false,
       true
@@ -107,4 +115,77 @@ onBeforeUnmount(() => {
   if (chart) chart.destroy()
   chart = undefined
 })
+
+// --------- Export helpers ---------
+const safeFileName = (s) =>
+  String(s || 'export')
+    .toLowerCase()
+    .replace(/[^a-z0-9-_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+
+const nowStamp = () => {
+  const d = new Date()
+  const pad = (n) => (n < 10 ? '0' + n : '' + n)
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`
+}
+
+const downloadPNG = async () => {
+  if (!chart) return
+  try {
+    const { imgURI } = await chart.dataURI()
+    const a = document.createElement('a')
+    a.href = imgURI
+    const base = props.series?.[0]?.name || 'chart'
+    a.download = `${safeFileName(base)}_${nowStamp()}.png`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  } catch (e) {
+    console.error('PNG export failed:', e)
+  }
+}
+
+const downloadCSV = () => {
+  // Costruiamo CSV: prima colonna categories, poi una colonna per ogni serie
+  const cats = Array.isArray(props.categories) ? props.categories : []
+  const series = Array.isArray(props.series) ? props.series : []
+  const headers = ['category', ...series.map((s) => s?.name ?? 'series')]
+  const rows = []
+
+  for (let i = 0; i < cats.length; i++) {
+    const row = [cats[i]]
+    for (let s = 0; s < series.length; s++) {
+      const val = Array.isArray(series[s]?.data) ? series[s].data[i] : ''
+      row.push(val ?? '')
+    }
+    rows.push(row)
+  }
+
+  const toCSV = (arr) =>
+    arr
+      .map((row) =>
+        row
+          .map((cell) => {
+            const v = cell == null ? '' : String(cell)
+            // escape minimale
+            if (/[",;\n]/.test(v)) return `"${v.replace(/"/g, '""')}"`
+            return v
+          })
+          .join(',')
+      )
+      .join('\n')
+
+  const csv = [headers, ...rows]
+  const blob = new Blob([toCSV(csv)], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  const base = series?.[0]?.name || 'chart'
+  a.href = url
+  a.download = `${safeFileName(base)}_${nowStamp()}.csv`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
 </script>

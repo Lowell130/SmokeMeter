@@ -2,8 +2,10 @@
   <nav class="bg-white border-b border-gray-200 dark:bg-gray-900">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between p-4">
       <NuxtLink to="/" class="flex items-center space-x-3 rtl:space-x-reverse">
-        <img src="https://flowbite.com/docs/images/logo.svg" class="h-8" alt="Logo" />
-        <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Smoke Tracker</span>
+       <img src="~/assets/images/logo.png" class="h-10" alt="Logo" />
+
+        <!-- <img src="/frontend/app/assets/images/logo.png" class="h-8" alt="Logo" /> -->
+        <!-- <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Smokio</span> -->
       </NuxtLink>
 
       <button
@@ -44,14 +46,10 @@
             Profilo
           </NuxtLink></li>
 
-          <!-- Auth buttons -->
-          <li><AuthButtons /></li>
+        
         </ul>
       </div>
     </div>
   </nav>
 </template>
 
-<script setup>
-
-</script>

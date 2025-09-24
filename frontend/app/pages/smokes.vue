@@ -1,5 +1,4 @@
 <!-- pages/smokes.vue -->
-<!-- pages/smokes.vue -->
 <template>
   <section class="space-y-4">
     <h1 class="text-xl font-semibold">Sigarette</h1>
@@ -13,7 +12,10 @@
 
       <div class="flex items-center gap-2">
         <label class="text-sm">Per pagina</label>
-        <select v-model.number="limit" @change="goPage(1)" class="border rounded p-1 text-sm">
+        <select v-model.number="limit" @change="goPage(1)" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+               focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5 pr-8
+               dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400
+               dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
           <option :value="10">10</option>
           <option :value="20">20</option>
           <option :value="50">50</option>
@@ -24,7 +26,8 @@
     </div>
 
     <!-- ⛔️ RIMOSSO <SmokesTable ... /> per evitare duplicazione -->
-
+<div class="p-4 bg-white rounded-2xl shadow">
+    <h3 class="font-semibold mb-3">Sigarette</h3>
     <div class="relative overflow-x-auto">
       <table class="w-full text-sm text-left text-gray-500">
         <thead class="text-xs text-gray-700 uppercase bg-gray-50">
@@ -71,12 +74,58 @@
         </tbody>
       </table>
     </div>
-
-    <div class="flex items-center justify-between">
-      <button class="px-3 py-1 rounded border" :disabled="page<=1" @click="goPrev">« Prec</button>
-      <div class="text-sm text-gray-600">Pagina {{ page }} / {{ totalPages }}</div>
-      <button class="px-3 py-1 rounded border" :disabled="page>=totalPages" @click="goNext">Succ »</button>
     </div>
+
+   <nav aria-label="Page navigation example" class="flex justify-center">
+  <ul class="inline-flex -space-x-px text-base h-10">
+    <!-- Previous -->
+    <li>
+      <button
+        class="flex items-center justify-center px-4 h-10 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        :disabled="page <= 1"
+        @click="goPrev"
+      >
+        Previous
+      </button>
+    </li>
+
+    <!-- Pages -->
+    <li v-for="p in pages" :key="'p-' + p">
+      <!-- separatore -->
+      <span
+        v-if="p === '…'"
+        class="flex items-center justify-center px-4 h-10 leading-tight text-gray-400 bg-white border border-gray-300 select-none"
+      >…</span>
+
+      <!-- numero -->
+      <button
+        v-else
+        @click="goPage(p)"
+        :aria-current="p === page ? 'page' : undefined"
+        :class="[
+          'flex items-center justify-center px-4 h-10 leading-tight border',
+          p === page
+            ? 'text-blue-600 border-gray-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700'
+            : 'text-gray-500 bg-white border-gray-300 hover:bg-gray-100 hover:text-gray-700'
+        ]"
+      >
+        {{ p }}
+      </button>
+    </li>
+
+    <!-- Next -->
+    <li>
+      <button
+        class="flex items-center justify-center px-4 h-10 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        :disabled="page >= totalPages"
+        @click="goNext"
+      >
+        Next
+      </button>
+    </li>
+  </ul>
+</nav>
+
   </section>
 </template>
 
@@ -118,6 +167,29 @@ const reload = () => {
     refreshTick.value++
   })
 }
+
+// finestra pagine (max 7 visibili con ellissi)
+const pages = computed(() => {
+  const total = totalPages.value
+  const current = page.value
+  const windowSize = 7
+  if (total <= windowSize) return Array.from({ length: total }, (_, i) => i + 1)
+
+  const pagesArr = []
+  const add = (v) => pagesArr.push(v)
+
+  const start = Math.max(2, current - 2)
+  const end = Math.min(total - 1, current + 2)
+
+  add(1)
+  if (start > 2) add('…')
+  for (let p = start; p <= end; p++) add(p)
+  if (end < total - 1) add('…')
+  add(total)
+
+  return pagesArr
+})
+
 
 const onDelete = async (s) => {
   if (!confirm('Eliminare questa sigaretta?')) return
