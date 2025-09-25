@@ -2,10 +2,14 @@
 <template>
   <nav class="bg-white border-b border-gray-200 dark:bg-gray-900">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between p-4">
-      <!-- Brand -->
-      <NuxtLink to="/" class="flex items-center space-x-3 rtl:space-x-reverse" @click="closeOnMobile">
-        <img src="~/assets/images/logo.png" class="h-10" alt="Logo" />
-      </NuxtLink>
+    <!-- Brand -->
+<NuxtLink
+  :to="isAuthed ? '/dashboard' : '/'"
+  class="flex items-center space-x-3 rtl:space-x-reverse"
+  @click="closeOnMobile"
+>
+  <img src="~/assets/images/logo.png" class="h-10" alt="Logo" />
+</NuxtLink>
 
       <!-- Hamburger -->
       <button
