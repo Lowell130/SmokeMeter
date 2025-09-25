@@ -1,3 +1,4 @@
+<!-- components/Appheader.vue -->
 <template>
   <nav class="bg-white border-b border-gray-200 dark:bg-gray-900">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between p-4">

@@ -1,15 +1,11 @@
-// middleware/AuthenticatorAssertionResponse.global.js
+// middleware/auth.global.js
 export default defineNuxtRouteMiddleware((to) => {
-  const token = useState('token')
+  // usa cookie, così funziona anche in SSR
+  const tokenCookie = useCookie('token', { sameSite: 'lax', path: '/', watch: true })
+  const token = tokenCookie.value || undefined
 
-  if (process.client && !token.value) {
-    const t = localStorage.getItem('token')
-    if (t) token.value = t
-  }
-
-  // aggiunte /packs e /smokes
   const protectedRoutes = ['/dashboard', '/profile', '/packs', '/smokes']
-  if (protectedRoutes.includes(to.path) && !token.value) {
+  if (protectedRoutes.includes(to.path) && !token) {
     return navigateTo('/login')
   }
 })
