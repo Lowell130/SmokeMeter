@@ -4,8 +4,9 @@
     <StatsCards :stats="stats" :packs="packs" />
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <AddSmokeCard :packs="packs" :refresh-key="refreshTick" @added="refresh" />
    <AddPackCard @added="refresh" />
-<AddSmokeCard :packs="packs" :refresh-key="refreshTick" @added="refresh" />
+
 
       
     </div>
