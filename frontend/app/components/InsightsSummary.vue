@@ -8,7 +8,7 @@
 
     <div v-if="loading" class="text-sm text-gray-500">Sto preparando il sommario…</div>
     <div v-else class="space-y-3">
-      <div> Fumate oggi: ---</div>
+   
       <p class="text-sm leading-relaxed">
        
         Negli ultimi <b>{{ days }}</b> giorni hai registrato
