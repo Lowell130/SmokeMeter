@@ -25,6 +25,11 @@
       />
     </div>
 
+     <div>
+      <h3 class="font-semibold text-sm text-gray-900">Ultimi inseriti</h3>
+   <div><span class="text-xs text-gray-900 dark:text-white">Camel Blue Morbide 20</span></div>
+  </div>
+
     <div class="text-sm text-red-600" v-if="error">{{ error }}</div>
 
     <button
@@ -35,7 +40,13 @@
       <span v-if="!loading">Salva</span>
       <span v-else>Salvataggio…</span>
     </button>
+
+   
   </div>
+
+
+ 
+ 
 </template>
 
 <script setup>
